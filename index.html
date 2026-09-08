@@ -1,0 +1,889 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>AgileDP: Quantizing Diffusion Policy via Dynamic Scaling and Reweighted Distillation</title>
+  <meta name="description"
+        content="AgileDP quantizes Diffusion Policy to 4-bit weights and activations using Timestep-Aware Delta Adaptation and Magnitude-aware Error Reweighted Distillation. CoRL 2026.">
+  <meta name="keywords" content="Diffusion Policy, Quantization, Imitation Learning, Manipulation, Robot Learning, CoRL 2026">
+
+  <!-- Open Graph / social preview -->
+  <meta property="og:title" content="AgileDP: Quantizing Diffusion Policy via Dynamic Scaling and Reweighted Distillation">
+  <meta property="og:description" content="Full 4-bit weight and activation quantization for Diffusion Policy. CoRL 2026.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://kist-pier.github.io/AgileDP/">
+  <meta property="og:image" content="https://kist-pier.github.io/AgileDP/static/images/teaser.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="https://kist-pier.github.io/AgileDP/static/images/teaser.png">
+
+  <link rel="icon" href="static/images/favicon.svg" type="image/svg+xml">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Noto+Sans:wght@400;600&family=JetBrains+Mono:wght@400;600&display=swap"
+        rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1/css/academicons.min.css">
+  <link rel="stylesheet" href="static/css/index.css">
+
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']],
+        displayMath: [['$$', '$$'], ['\\[', '\\]']]
+      },
+      options: { skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'] }
+    };
+  </script>
+  <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+
+<body>
+
+<!-- =====================================================================
+     TODO before going public
+     ---------------------------------------------------------------------
+     1. Links in the hero: replace the four href="#" placeholders below
+        (arXiv / paper PDF / code / video) and drop class "is-disabled".
+     2. static/videos/*.mp4 are generated placeholders. Overwrite each file
+        in place, keeping the same filename, and the page needs no edits.
+     3. Author homepages: wrap each name in <a href="..."> in the hero.
+     4. Figures in static/images/ are cropped straight out of the submission
+        PDF. Swap for camera-ready or higher-resolution exports.
+     5. Update the BibTeX block once the CoRL proceedings entry exists.
+     ===================================================================== -->
+
+<!-- ============================ SIDE NAV ============================== -->
+<nav class="floating-nav" id="floatingNav">
+  <div class="floating-nav-trigger" title="Sections">
+    <i class="fas fa-list"></i>
+  </div>
+  <div class="floating-nav-content">
+    <ul class="floating-nav-menu">
+      <li><a href="#abstract"    class="floating-nav-link">Abstract</a></li>
+      <li><a href="#motivation"  class="floating-nav-link">Motivation</a></li>
+      <li><a href="#approach"    class="floating-nav-link">Approach</a></li>
+      <li><a href="#simulation"  class="floating-nav-link">Simulation Results</a></li>
+      <li><a href="#efficiency"  class="floating-nav-link">Efficiency</a></li>
+      <li><a href="#realworld"   class="floating-nav-link">Real-World Results</a></li>
+      <li><a href="#bibtex"      class="floating-nav-link">BibTeX</a></li>
+    </ul>
+  </div>
+</nav>
+
+<!-- ============================== HERO ================================= -->
+<div class="hero-title-wrap">
+  <div class="hero-video-grid">
+    <video src="static/videos/hero_1.mp4" muted loop autoplay playsinline></video>
+    <video src="static/videos/hero_2.mp4" muted loop autoplay playsinline></video>
+    <video src="static/videos/hero_3.mp4" muted loop autoplay playsinline></video>
+    <video src="static/videos/hero_4.mp4" muted loop autoplay playsinline></video>
+    <video src="static/videos/hero_5.mp4" muted loop autoplay playsinline></video>
+    <video src="static/videos/hero_6.mp4" muted loop autoplay playsinline></video>
+    <video src="static/videos/hero_7.mp4" muted loop autoplay playsinline></video>
+    <video src="static/videos/hero_8.mp4" muted loop autoplay playsinline></video>
+  </div>
+
+  <div class="hero-overlay">
+    <h1>AgileDP</h1>
+    <p class="hero-subtitle">Quantizing Diffusion Policy via Dynamic Scaling and Reweighted Distillation</p>
+
+    <div class="venue-badge"><span>CoRL 2026</span></div>
+
+    <div class="hero-authors">
+      <div class="publication-authors">
+        <span class="author-block">Jiyeon Joung<sup>1</sup>,</span>
+        <span class="author-block">Seungseop Lee<sup>1</sup>,</span>
+        <span class="author-block">Namyoon Kim<sup>1</sup>,</span>
+        <span class="author-block">Keunwoo Jang<sup>1,&dagger;</sup></span>
+      </div>
+
+      <div class="publication-authors affiliations">
+        <span class="author-block"><sup>1</sup>
+          <a href="https://pier-lab.kr/" target="_blank" rel="noopener">PIER Lab</a>,
+          Korea Institute of Science and Technology (KIST)
+        </span>
+      </div>
+
+      <div class="corr-note">&dagger; Corresponding author</div>
+
+      <div class="publication-links">
+        <a href="#" class="hero-link is-disabled"><i class="ai ai-arxiv"></i> arXiv</a>
+        <a href="#" class="hero-link is-disabled"><i class="fas fa-file-pdf"></i> Paper</a>
+        <a href="#" class="hero-link is-disabled"><i class="fab fa-github"></i> Code</a>
+        <a href="#" class="hero-link is-disabled"><i class="fab fa-youtube"></i> Video</a>
+      </div>
+    </div>
+
+    <div class="scroll-cue"><i class="fas fa-chevron-down"></i></div>
+  </div>
+</div>
+
+<!-- ============================ ABSTRACT =============================== -->
+<section id="abstract">
+  <div class="container">
+    <div class="tagline">Abstract</div>
+    <div class="card-surface">
+      <p>
+        Diffusion Policy achieved strong performance in robot control, but its iterative denoising
+        process hinders deployment on resource-constrained edge devices. To overcome this problem, we
+        propose <strong>Agile Diffusion Policy (AgileDP)</strong>, which introduces integer-based
+        quantization of diffusion policies. We address fundamental challenges in quantizing diffusion
+        policies: (1) drastic activation distribution shifts across denoising steps and (2) large
+        relative quantization error at low-magnitude regions of the action sequence.
+      </p>
+      <p>
+        First, diffusion models exhibit wide variation in activation distributions across denoising
+        timesteps, rendering fixed quantization grids ineffective. We propose an implicit parametric
+        activation quantization scheme utilizing a lightweight neural network to project timestep
+        information, dynamically adapting the quantization scale without extra training overhead.
+        Second, we observe that low-magnitude regions of the action sequence consistently exhibit large
+        relative quantization error. We propose a magnitude-aware error reweighted distillation that
+        targets these large-error regions to recover action accuracy.
+      </p>
+      <p>
+        Extensive evaluations of 7 tasks in 3 benchmarks show robust performance even with 4-bit
+        precision, comparable to the full-precision model. Furthermore, by achieving up to
+        8.5&times; speedup and 3.2&times; memory savings, this work validates practical deployment on
+        robotic on-board devices.
+      </p>
+
+      <div class="stat-row">
+        <div class="stat-tile">
+          <div class="stat-value">W4A4</div>
+          <div class="stat-label">First full 4-bit weight <em>and</em> activation quantization for Diffusion Policy</div>
+        </div>
+        <div class="stat-tile">
+          <div class="stat-value">8.5&times;</div>
+          <div class="stat-label">Speedup on Jetson Orin Nano (DP-C)</div>
+        </div>
+        <div class="stat-tile">
+          <div class="stat-value">3.2&times;</div>
+          <div class="stat-label">Memory reduction on Jetson Orin Nano (DP-C)</div>
+        </div>
+        <div class="stat-tile">
+          <div class="stat-value">7 / 3</div>
+          <div class="stat-label">Tasks across Robomimic, Push-T and Franka Kitchen</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="result-label">Overview</div>
+    <div class="card-surface">
+      <figure>
+        <div class="figure-frame">
+          <img src="static/images/teaser.png"
+               alt="AgileDP overview: PTQ fails while AgileDP recovers full-precision behaviour via TADA and MERD.">
+        </div>
+        <figcaption>
+          <strong>Overview of Agile Diffusion Policy (AgileDP).</strong> While naive quantization, e.g.
+          Post-Training Quantization (PTQ), leads to task failure <strong>(left)</strong>, AgileDP
+          achieves robust manipulation comparable to the FP32 baseline <strong>(right)</strong>. To this
+          end, <strong>TADA</strong> handles drastic activation shifts across denoising steps by
+          dynamically adapting quantization scales, preventing both truncation and rounding errors.
+          <strong>MERD</strong> handles large relative quantization error at low-magnitude actions by
+          reweighting distillation toward these regions, recovering fine-grained corrections critical
+          for manipulation.
+        </figcaption>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<!-- =========================== MOTIVATION ============================== -->
+<section id="motivation">
+  <div class="container">
+    <div class="tagline">Motivation</div>
+    <div class="card-surface">
+      <p>
+        Quantization noise is the residual between each quantized value and its full-precision
+        counterpart. In a diffusion policy this noise accumulates through iterative denoising
+        <em>and</em> receding-horizon control, pushing the policy onto out-of-distribution action
+        trajectories. We localise the degradation along <strong>two dimensions of Diffusion
+        Policy</strong> that prior diffusion-quantization work does not jointly address.
+      </p>
+
+      <figure>
+        <div class="figure-frame">
+          <img src="static/images/motivation.png"
+               alt="Left: activation distributions shift across denoising timesteps. Right: relative quantization error is larger for low-magnitude actions.">
+        </div>
+        <figcaption>
+          <strong>Quantization-induced effects in Diffusion Policy.</strong>
+          <strong>(a)</strong> Activation distributions across denoising timesteps.
+          <strong>(b)</strong> Larger relative error for low-magnitude actions under the same absolute
+          error.
+        </figcaption>
+      </figure>
+
+      <div class="insight-grid">
+        <div class="insight-card">
+          <span class="module-tag">dimension 1 &middot; denoising timestep</span>
+          <h4>A fixed grid cannot fit every timestep</h4>
+          <p>
+            The same noise-prediction network is invoked $T$ times. At early timesteps noise dominates
+            and activation ranges are wide; at late timesteps structured signal emerges and ranges become
+            narrow. Calibrating on narrow ranges causes <strong>truncation error</strong>; calibrating on
+            wide ranges causes <strong>rounding error</strong>.
+          </p>
+        </div>
+        <div class="insight-card is-merd">
+          <span class="module-tag is-merd">dimension 2 &middot; action sequence</span>
+          <h4>Small actions carry the largest relative error</h4>
+          <p>
+            A fixed scale bounds the absolute rounding error by a constant, so low-magnitude actions
+            suffer a large <strong>relative</strong> error. Those actions often encode the fine,
+            contact-rich corrections that decide task success, yet an average distillation loss lets
+            large-magnitude actions dominate the gradient.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ APPROACH =============================== -->
+<section id="approach">
+  <div class="container">
+    <div class="tagline">Approach</div>
+
+    <div class="card-surface">
+      <figure>
+        <div class="figure-frame">
+          <img src="static/images/method_overview.png"
+               alt="AgileDP architecture: TADA on the left, MERD on the right.">
+        </div>
+        <figcaption>
+          <strong>Overview of AgileDP.</strong> <strong>(1) TADA (left).</strong> At each denoising
+          timestep $t$ a lightweight MLP outputs $s(t)$ to stabilise activation distribution shifts.
+          Activations $x_t$ are scaled by $s(t)$ and quantized to $\hat{X}_t$ using $\delta_x$. LoRA
+          parameters are merged with base weights and quantized to $\hat{W}$, so $\hat{X}_t$ and
+          $\hat{W}$ run as integer matrix multiplication at inference.
+          <strong>(2) MERD (right).</strong> The quantization error $\Delta\epsilon_\phi$ is computed
+          from teacher and quantized-student predictions. $\mathcal{L}_{global}$ is defined over the
+          entire prediction to reduce the average relative quantization error, while
+          $\mathcal{L}_{local}$ reweights distillation toward the top-$K$ actions with the largest
+          relative quantization error.
+        </figcaption>
+      </figure>
+
+      <p style="margin-bottom:0">
+        Both modules sit inside a quantization-aware fine-tuning framework built on symmetric uniform
+        quantization. With scale $\delta$ and bit-width $a$,
+      </p>
+      <p style="text-align:center">
+        $$ Q_U(x, \delta) = \operatorname{clip}\!\left(\lfloor x/\delta \rceil,\ -2^{a-1},\ 2^{a-1}-1\right)\cdot\delta $$
+      </p>
+      <p style="margin-bottom:0">
+        and we adopt QALoRA so that base and low-rank weights are merged <em>before</em> quantization,
+        giving a pure-integer forward pass without runtime dequantization:
+      </p>
+      <p style="text-align:center; margin-bottom:0">
+        $$ Y = Q_U(X, \delta_x)\cdot Q_U(W_0 + BA,\ \delta_w) = \hat{X}\hat{W} $$
+      </p>
+    </div>
+
+    <div class="result-label">TADA &middot; Timestep-Aware Delta Adaptation</div>
+    <div class="card-surface">
+      <figure>
+        <div class="figure-frame">
+          <img src="static/images/tada.png"
+               alt="TADA module: a lightweight MLP maps the normalized denoising timestep to an activation scaling factor.">
+        </div>
+      </figure>
+
+      <p>
+        Rather than predicting a separate step size $\delta$ for every denoising timestep, TADA assigns a
+        <strong>single base scale</strong> $\delta_x$ per quantized layer and modulates the effective
+        resolution with a timestep-dependent scaling factor:
+      </p>
+      <p style="text-align:center">
+        $$ \tilde{x}_t = s(\tilde{t})\cdot x_t,\qquad \hat{x}_t = Q_U(\tilde{x}_t, \delta_x) $$
+      </p>
+      <p>
+        Scaling by $s(\tilde{t})$ before quantizing with a fixed $\delta_x$ is equivalent to quantizing
+        with the dynamic scale $\delta_x / s(\tilde{t})$, so activations from every timestep are
+        normalised into one effective quantization range. Each quantized layer carries a lightweight
+        MLP whose hidden layer is <em>randomly initialised and frozen</em>:
+      </p>
+      <p style="text-align:center">
+        $$ s^{(l)}(\tilde{t}) = \mathrm{Softplus}\!\left(W_2^{(l)}\cdot \mathrm{SiLU}\!\left(W_1^{(l)}\tilde{t} + b_1^{(l)}\right) + b_2^{(l)}\right) $$
+      </p>
+      <p style="margin-bottom:0">
+        The output layer is fitted <strong>without gradient descent</strong>. Target scales come from the
+        activation RMS on a calibration set, $s_t^{*(l)} = \sigma_{ref}^{(l)} / \sigma^{(l)}(t)$, and the
+        fit reduces to ridge regression with the closed-form solution
+        $\theta^{*(l)} = \left(H^{(l)\top}H^{(l)} + \mu I\right)^{-1}H^{(l)\top}y^{(l)}$. The MLP is then
+        frozen for all of fine-tuning, so TADA adds <strong>no per-timestep parameter overhead</strong>
+        &mdash; unlike methods that learn or store a scale for each of the $T$ steps.
+      </p>
+    </div>
+
+    <div class="result-label">MERD &middot; Magnitude-aware Error Reweighted Distillation</div>
+    <div class="card-surface">
+      <figure>
+        <div class="figure-frame">
+          <img src="static/images/merd.png"
+               alt="MERD module: teacher-student quantization error is reweighted toward high relative-error regions of the action sequence.">
+        </div>
+      </figure>
+
+      <p>
+        MERD turns the observed negative correlation between action magnitude and relative quantization
+        error into a training objective. A global term preserves the teacher's overall prediction
+        behaviour,
+      </p>
+      <p style="text-align:center">
+        $$ \mathcal{L}_{global} = \frac{\mathbb{E}\left[\lVert \Delta\epsilon_\phi \rVert_2^2\right]}{\mathbb{E}\left[\lVert \epsilon_\phi \rVert_2^2\right]},\qquad \Delta\epsilon_\phi = \hat{\epsilon}_\phi - \epsilon_\phi $$
+      </p>
+      <p>
+        while a relative-error score locates the action-sequence positions where quantization error
+        dominates the teacher prediction. The normalisation term $\eta\bar{P}$ prevents the score from
+        exploding in near-zero regions:
+      </p>
+      <p style="text-align:center">
+        $$ S_{b,n} = \frac{\lVert \Delta\epsilon_{\phi,b,n,:} \rVert_2^2}{\lVert \epsilon_{\phi,b,n,:} \rVert_2^2 + \eta\bar{P}},\qquad \bar{P} = \mathbb{E}_{b,n}\!\left[\lVert \epsilon_{\phi,b,n,:} \rVert_2^2\right] $$
+      </p>
+      <p>
+        Distillation is then reweighted onto the top-$K$ scoring positions, with logarithmic compression
+        and clipping for numerical stability:
+      </p>
+      <p style="text-align:center">
+        $$ \mathcal{L}_{local} = \sum_{(b,n)\in \mathcal{I}_K} \alpha_{b,n}\log\!\left(1 + \operatorname{clip}(S_{b,n}, S_{max})\right) $$
+      </p>
+      <p style="margin-bottom:0">
+        The total objective combines the two with the DDPM loss:
+        $\mathcal{L}_{AgileDP} = \mathcal{L}_{DDPM} + \lambda\,\mathcal{L}_{MERD}$, where
+        $\mathcal{L}_{MERD} = \mathcal{L}_{global} + \mathcal{L}_{local}$.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= SIMULATION RESULTS ========================== -->
+<section id="simulation">
+  <div class="container">
+    <div class="tagline">Simulation Results</div>
+
+    <div class="card-surface">
+      <p style="margin-top:0">
+        We evaluate 7 tasks on <strong>Robomimic</strong>, <strong>Push-T</strong> and
+        <strong>Franka Kitchen</strong> under 8-bit and 4-bit quantization, using pretrained CNN-based
+        (DP-C) and transformer-based (DP-T) diffusion policies with the DDPM scheduler. Results are
+        reported as <strong>max / average</strong> over 3 seeds, 50 initialisations and 2 checkpoints.
+      </p>
+
+      <div class="bit-toggle" role="group" aria-label="Quantization bit-width">
+        <button class="bit-btn active" data-bits="4" type="button">W4A4</button>
+        <button class="bit-btn" data-bits="8" type="button">W8A8</button>
+      </div>
+
+      <!-- ------------------------------ W4A4 ---------------------------- -->
+      <div class="table-scroll" data-bit-table="4">
+        <table class="results">
+          <thead>
+            <tr>
+              <th class="method" rowspan="2">Method</th>
+              <th class="group" colspan="2">Lift</th>
+              <th class="group" colspan="2">Can</th>
+              <th class="group" colspan="2">Square</th>
+              <th class="group">Transport</th>
+              <th class="group">ToolHang</th>
+              <th class="group">Push-T</th>
+              <th class="group" colspan="4">Kitchen</th>
+            </tr>
+            <tr>
+              <th>ph</th><th>mh</th>
+              <th>ph</th><th>mh</th>
+              <th>ph</th><th>mh</th>
+              <th>ph</th>
+              <th>ph</th>
+              <th>ph</th>
+              <th>p1</th><th>p2</th><th>p3</th><th>p4</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="is-fp32">
+              <td class="method">FP32 <span class="backbone">DP-C</span></td>
+              <td>1.00/1.00</td><td>1.00/1.00</td><td>1.00/0.98</td><td>1.00/0.96</td><td>0.94/0.90</td><td>0.92/0.85</td><td>0.94/0.91</td><td>0.86/0.77</td><td>0.91/0.86</td><td>1.00/1.00</td><td>1.00/1.00</td><td>1.00/1.00</td><td>1.00/1.00</td>
+            </tr>
+            <tr class="is-fp32">
+              <td class="method">FP32 <span class="backbone">DP-T</span></td>
+              <td>1.00/1.00</td><td>1.00/1.00</td><td>0.96/0.91</td><td>1.00/0.94</td><td>0.80/0.74</td><td>0.82/0.77</td><td>0.92/0.81</td><td>0.72/0.54</td><td>0.76/0.70</td><td>1.00/1.00</td><td>1.00/0.99</td><td>1.00/0.99</td><td>1.00/0.97</td>
+            </tr>
+            <tr class="group-start">
+              <td class="method">PTQ <span class="backbone">DP-C</span></td>
+              <td>0.36/0.15</td><td>0.14/0.06</td><td>0.00/0.00</td><td>0.00/0.00</td><td>0.00/0.00</td><td>0.00/0.00</td><td>0.00/0.00</td><td>0.00/0.00</td><td>0.17/0.13</td><td>0.48/0.29</td><td>0.02/0.00</td><td>0.00/0.00</td><td>0.00/0.00</td>
+            </tr>
+            <tr>
+              <td class="method">PTQ <span class="backbone">DP-T</span></td>
+              <td>0.64/0.28</td><td>0.12/0.02</td><td>0.00/0.00</td><td>0.00/0.00</td><td>0.00/0.00</td><td>0.00/0.00</td><td>0.00/0.00</td><td>0.00/0.00</td><td>0.40/0.26</td><td>0.60/0.18</td><td>0.02/0.00</td><td>0.00/0.00</td><td>0.00/0.00</td>
+            </tr>
+            <tr class="group-start">
+              <td class="method">PTQD <span class="backbone">DP-C</span></td>
+              <td>1.00/0.77</td><td>0.70/0.32</td><td>0.08/0.04</td><td>0.00/0.00</td><td>0.08/0.03</td><td>0.00/0.00</td><td>0.00/0.00</td><td>0.00/0.00</td><td>0.34/0.21</td><td>0.24/0.06</td><td>0.00/0.00</td><td>0.00/0.00</td><td>0.00/0.00</td>
+            </tr>
+            <tr>
+              <td class="method">PTQD <span class="backbone">DP-T</span></td>
+              <td>1.00/0.93</td><td>0.60/0.29</td><td>0.08/0.03</td><td>0.02/0.00</td><td>0.00/0.00</td><td>0.00/0.00</td><td>0.00/0.00</td><td>0.00/0.00</td><td>0.68/0.60</td><td>0.24/0.07</td><td>0.04/0.01</td><td>0.00/0.00</td><td>0.00/0.00</td>
+            </tr>
+            <tr class="group-start">
+              <td class="method">SVDQuant <span class="backbone">DP-C</span></td>
+              <td>1.00/1.00</td><td>1.00/0.81</td><td>0.48/0.25</td><td>0.34/0.16</td><td>0.70/0.22</td><td>0.14/0.05</td><td>0.00/0.00</td><td>0.00/0.00</td><td>0.77/0.67</td><td>0.52/0.39</td><td>0.20/0.14</td><td>0.10/0.05</td><td>0.04/0.01</td>
+            </tr>
+            <tr>
+              <td class="method">SVDQuant <span class="backbone">DP-T</span></td>
+              <td>1.00/1.00</td><td>0.86/0.62</td><td>0.62/0.21</td><td>0.12/0.06</td><td>0.28/0.13</td><td>0.00/0.00</td><td>0.00/0.00</td><td>0.00/0.00</td><td>0.76/0.59</td><td>0.74/0.33</td><td>0.04/0.01</td><td>0.00/0.00</td><td>0.00/0.00</td>
+            </tr>
+            <tr class="is-ours group-start">
+              <td class="method">AgileDP <span class="backbone">DP-C</span></td>
+              <td>1.00/1.00</td><td>1.00/1.00</td><td>0.96/0.92</td><td>1.00/0.90</td><td>0.96/0.89</td><td>0.84/0.74</td><td>0.94/0.70</td><td>0.76/0.66</td><td>0.86/0.82</td><td>1.00/1.00</td><td>0.98/0.96</td><td>0.94/0.89</td><td>0.82/0.74</td>
+            </tr>
+            <tr class="is-ours">
+              <td class="method">AgileDP <span class="backbone">DP-T</span></td>
+              <td>1.00/1.00</td><td>1.00/1.00</td><td>0.98/0.91</td><td>0.92/0.89</td><td>0.87/0.82</td><td>0.83/0.81</td><td>0.84/0.77</td><td>0.46/0.41</td><td>0.78/0.72</td><td>1.00/0.99</td><td>1.00/0.99</td><td>0.98/0.98</td><td>0.92/0.91</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- ------------------------------ W8A8 ---------------------------- -->
+      <div class="table-scroll" data-bit-table="8" hidden>
+        <table class="results">
+          <thead>
+            <tr>
+              <th class="method" rowspan="2">Method</th>
+              <th class="group" colspan="2">Lift</th>
+              <th class="group" colspan="2">Can</th>
+              <th class="group" colspan="2">Square</th>
+              <th class="group">Transport</th>
+              <th class="group">ToolHang</th>
+              <th class="group">Push-T</th>
+              <th class="group" colspan="4">Kitchen</th>
+            </tr>
+            <tr>
+              <th>ph</th><th>mh</th>
+              <th>ph</th><th>mh</th>
+              <th>ph</th><th>mh</th>
+              <th>ph</th>
+              <th>ph</th>
+              <th>ph</th>
+              <th>p1</th><th>p2</th><th>p3</th><th>p4</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="is-fp32">
+              <td class="method">FP32 <span class="backbone">DP-C</span></td>
+              <td>1.00/1.00</td><td>1.00/1.00</td><td>1.00/0.98</td><td>1.00/0.96</td><td>0.94/0.90</td><td>0.92/0.85</td><td>0.94/0.91</td><td>0.86/0.77</td><td>0.91/0.86</td><td>1.00/1.00</td><td>1.00/1.00</td><td>1.00/1.00</td><td>1.00/1.00</td>
+            </tr>
+            <tr class="is-fp32">
+              <td class="method">FP32 <span class="backbone">DP-T</span></td>
+              <td>1.00/1.00</td><td>1.00/1.00</td><td>0.96/0.91</td><td>1.00/0.94</td><td>0.80/0.74</td><td>0.82/0.77</td><td>0.92/0.81</td><td>0.72/0.54</td><td>0.76/0.70</td><td>1.00/1.00</td><td>1.00/0.99</td><td>1.00/0.99</td><td>1.00/0.97</td>
+            </tr>
+            <tr class="group-start">
+              <td class="method">PTQ <span class="backbone">DP-C</span></td>
+              <td>1.00/0.99</td><td>1.00/0.93</td><td>0.96/0.45</td><td>0.18/0.08</td><td>0.90/0.63</td><td>0.44/0.17</td><td>0.00/0.00</td><td>0.18/0.04</td><td>0.88/0.83</td><td>0.70/0.30</td><td>0.32/0.09</td><td>0.18/0.04</td><td>0.14/0.02</td>
+            </tr>
+            <tr>
+              <td class="method">PTQ <span class="backbone">DP-T</span></td>
+              <td>1.00/1.00</td><td>1.00/1.00</td><td>0.98/0.94</td><td>0.96/0.80</td><td>0.90/0.84</td><td>0.70/0.35</td><td>0.72/0.16</td><td>0.76/0.40</td><td>0.76/0.71</td><td>1.00/0.99</td><td>1.00/0.99</td><td>1.00/0.98</td><td>0.94/0.89</td>
+            </tr>
+            <tr class="group-start">
+              <td class="method">PTQD <span class="backbone">DP-C</span></td>
+              <td>1.00/1.00</td><td>1.00/1.00</td><td>0.82/0.56</td><td>0.90/0.47</td><td>0.96/0.74</td><td>0.90/0.16</td><td>0.78/0.23</td><td>0.54/0.19</td><td>0.82/0.50</td><td>1.00/0.77</td><td>1.00/0.64</td><td>0.94/0.50</td><td>0.74/0.26</td>
+            </tr>
+            <tr>
+              <td class="method">PTQD <span class="backbone">DP-T</span></td>
+              <td>1.00/1.00</td><td>1.00/0.92</td><td>0.60/0.41</td><td>0.20/0.06</td><td>0.18/0.04</td><td>0.00/0.00</td><td>0.00/0.00</td><td>0.06/0.01</td><td>0.77/0.68</td><td>0.60/0.15</td><td>0.18/0.03</td><td>0.00/0.00</td><td>0.00/0.00</td>
+            </tr>
+            <tr class="group-start">
+              <td class="method">SVDQuant <span class="backbone">DP-C</span></td>
+              <td>1.00/1.00</td><td>1.00/1.00</td><td>1.00/0.98</td><td>0.98/0.97</td><td>0.96/0.94</td><td>0.94/0.82</td><td>0.98/0.87</td><td>0.86/0.74</td><td>0.89/0.83</td><td>1.00/1.00</td><td>1.00/1.00</td><td>1.00/1.00</td><td>1.00/0.99</td>
+            </tr>
+            <tr>
+              <td class="method">SVDQuant <span class="backbone">DP-T</span></td>
+              <td>1.00/1.00</td><td>1.00/1.00</td><td>1.00/0.96</td><td>1.00/0.94</td><td>0.96/0.93</td><td>0.86/0.78</td><td>0.84/0.81</td><td>0.66/0.51</td><td>0.77/0.71</td><td>1.00/1.00</td><td>1.00/1.00</td><td>1.00/0.99</td><td>0.98/0.98</td>
+            </tr>
+            <tr class="is-ours group-start">
+              <td class="method">AgileDP <span class="backbone">DP-C</span></td>
+              <td>1.00/1.00</td><td>1.00/1.00</td><td>0.98/0.96</td><td>0.98/0.94</td><td>0.94/0.92</td><td>0.86/0.84</td><td>0.92/0.87</td><td>0.82/0.74</td><td>0.86/0.84</td><td>1.00/1.00</td><td>1.00/1.00</td><td>1.00/1.00</td><td>1.00/0.99</td>
+            </tr>
+            <tr class="is-ours">
+              <td class="method">AgileDP <span class="backbone">DP-T</span></td>
+              <td>1.00/1.00</td><td>1.00/1.00</td><td>1.00/0.96</td><td>1.00/0.95</td><td>0.91/0.88</td><td>0.88/0.81</td><td>0.86/0.84</td><td>0.68/0.53</td><td>0.81/0.72</td><td>1.00/1.00</td><td>1.00/1.00</td><td>1.00/0.99</td><td>0.96/0.95</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p class="table-note">
+        Visual policies are evaluated on Robomimic and Push-T, state policies on Kitchen. Push-T reports
+        target-area coverage rather than success rate; for Kitchen, p<em>x</em> is the rate of completing
+        at least <em>x</em> subtasks. <strong>ph</strong> = proficient-human demonstrations,
+        <strong>mh</strong> = mixed-human.
+      </p>
+
+      <p class="table-note" style="color:var(--text-secondary)">
+        At W4A4 every baseline collapses: PTQ reaches near-zero success on most tasks, and PTQD and
+        SVDQuant drop Square, Transport and ToolHang to 0%. AgileDP is the only method that stays close
+        to full precision, and on the long-horizon Kitchen task it restores 4-subtask completion to 74%
+        where PTQD already fails at the first subtask.
+      </p>
+    </div>
+
+    <div class="result-label">Rollouts</div>
+    <div class="card-surface task-scope">
+      <div class="task-grid">
+        <div class="task-card active" data-task="task-lift"><span>Lift</span><small>Robomimic</small></div>
+        <div class="task-card" data-task="task-can"><span>Can</span><small>Robomimic</small></div>
+        <div class="task-card" data-task="task-square"><span>Square</span><small>Robomimic</small></div>
+        <div class="task-card" data-task="task-transport"><span>Transport</span><small>Robomimic</small></div>
+        <div class="task-card" data-task="task-toolhang"><span>ToolHang</span><small>Robomimic</small></div>
+        <div class="task-card" data-task="task-pusht"><span>Push-T</span><small>Push-T</small></div>
+        <div class="task-card" data-task="task-kitchen"><span>Kitchen</span><small>Franka Kitchen</small></div>
+      </div>
+
+      <div class="task-panel active" id="task-lift">
+        <div class="video-duo">
+          <div class="video-cell">
+            <h5>PTQ &middot; W4A4</h5>
+            <video src="static/videos/compare_ptq.mp4" muted loop autoplay playsinline controls></video>
+          </div>
+          <div class="video-cell is-ours">
+            <h5>AgileDP &middot; W4A4</h5>
+            <video src="static/videos/sim_lift.mp4" muted loop autoplay playsinline controls></video>
+          </div>
+        </div>
+      </div>
+
+      <div class="task-panel" id="task-can">
+        <div class="video-duo">
+          <div class="video-cell">
+            <h5>PTQ &middot; W4A4</h5>
+            <video src="static/videos/compare_ptq.mp4" muted loop playsinline controls></video>
+          </div>
+          <div class="video-cell is-ours">
+            <h5>AgileDP &middot; W4A4</h5>
+            <video src="static/videos/sim_can.mp4" muted loop playsinline controls></video>
+          </div>
+        </div>
+      </div>
+
+      <div class="task-panel" id="task-square">
+        <div class="video-duo">
+          <div class="video-cell">
+            <h5>PTQ &middot; W4A4</h5>
+            <video src="static/videos/compare_ptq.mp4" muted loop playsinline controls></video>
+          </div>
+          <div class="video-cell is-ours">
+            <h5>AgileDP &middot; W4A4</h5>
+            <video src="static/videos/sim_square.mp4" muted loop playsinline controls></video>
+          </div>
+        </div>
+      </div>
+
+      <div class="task-panel" id="task-transport">
+        <div class="video-duo">
+          <div class="video-cell">
+            <h5>PTQ &middot; W4A4</h5>
+            <video src="static/videos/compare_ptq.mp4" muted loop playsinline controls></video>
+          </div>
+          <div class="video-cell is-ours">
+            <h5>AgileDP &middot; W4A4</h5>
+            <video src="static/videos/sim_transport.mp4" muted loop playsinline controls></video>
+          </div>
+        </div>
+      </div>
+
+      <div class="task-panel" id="task-toolhang">
+        <div class="video-duo">
+          <div class="video-cell">
+            <h5>PTQ &middot; W4A4</h5>
+            <video src="static/videos/compare_ptq.mp4" muted loop playsinline controls></video>
+          </div>
+          <div class="video-cell is-ours">
+            <h5>AgileDP &middot; W4A4</h5>
+            <video src="static/videos/sim_toolhang.mp4" muted loop playsinline controls></video>
+          </div>
+        </div>
+      </div>
+
+      <div class="task-panel" id="task-pusht">
+        <div class="video-duo">
+          <div class="video-cell">
+            <h5>PTQ &middot; W4A4</h5>
+            <video src="static/videos/compare_ptq.mp4" muted loop playsinline controls></video>
+          </div>
+          <div class="video-cell is-ours">
+            <h5>AgileDP &middot; W4A4</h5>
+            <video src="static/videos/sim_pusht.mp4" muted loop playsinline controls></video>
+          </div>
+        </div>
+      </div>
+
+      <div class="task-panel" id="task-kitchen">
+        <div class="video-duo">
+          <div class="video-cell">
+            <h5>PTQ &middot; W4A4</h5>
+            <video src="static/videos/compare_ptq.mp4" muted loop playsinline controls></video>
+          </div>
+          <div class="video-cell is-ours">
+            <h5>AgileDP &middot; W4A4</h5>
+            <video src="static/videos/sim_kitchen.mp4" muted loop playsinline controls></video>
+          </div>
+        </div>
+      </div>
+
+      <p class="table-note">
+        Every clip in this section is a generated placeholder. Overwrite the matching file in
+        <code>static/videos/</code> and the page picks it up with no HTML change.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- =========================== EFFICIENCY ============================== -->
+<section id="efficiency">
+  <div class="container">
+    <div class="tagline">Efficiency</div>
+    <div class="card-surface">
+      <p style="margin-top:0">
+        Inference latency is averaged over 10 rollouts across all denoising steps; model size counts the
+        denoising model plus quantization parameters. Quantized entries are W4A4.
+      </p>
+
+      <div class="table-scroll">
+        <table class="results">
+          <thead>
+            <tr>
+              <th class="method" rowspan="2">Device / Metric</th>
+              <th class="group" colspan="2">FP32</th>
+              <th class="group" colspan="2">PTQ</th>
+              <th class="group" colspan="2">AgileDP</th>
+            </tr>
+            <tr>
+              <th>DP-C</th><th>DP-T</th>
+              <th>DP-C</th><th>DP-T</th>
+              <th>DP-C</th><th>DP-T</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="method">RTX 4060 Ti &middot; latency (ms)</td>
+              <td>1154.3</td><td>292.5</td><td>185.2</td><td>71.3</td><td>236.8</td><td>116.1</td>
+            </tr>
+            <tr>
+              <td class="method">RTX 4060 Ti &middot; size (MB)</td>
+              <td>1054.0</td><td>125.7</td><td>278.8</td><td>100.8</td><td>268.0</td><td>118.9</td>
+            </tr>
+            <tr class="group-start">
+              <td class="method">Jetson Orin Nano &middot; latency (ms)</td>
+              <td>804.0</td><td>185.2</td><td>95.9</td><td>76.3</td><td>94.5</td><td>75.8</td>
+            </tr>
+            <tr>
+              <td class="method">Jetson Orin Nano &middot; size (MB)</td>
+              <td>1287.5</td><td>34.5</td><td>337.7</td><td>18.0</td><td>405.3</td><td>26.0</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="stat-row">
+        <div class="stat-tile">
+          <div class="stat-value">4.9&times;</div>
+          <div class="stat-label">Speedup, DP-C on RTX 4060 Ti</div>
+        </div>
+        <div class="stat-tile">
+          <div class="stat-value">3.9&times;</div>
+          <div class="stat-label">Memory reduction, DP-C on RTX 4060 Ti</div>
+        </div>
+        <div class="stat-tile">
+          <div class="stat-value">8.5&times;</div>
+          <div class="stat-label">Speedup, DP-C on Jetson Orin Nano</div>
+        </div>
+        <div class="stat-tile">
+          <div class="stat-value">3.2&times;</div>
+          <div class="stat-label">Memory reduction, DP-C on Jetson Orin Nano</div>
+        </div>
+      </div>
+
+      <p class="table-note">
+        Gains are smaller for DP-T because its denoising model is far more compact than DP-C
+        (9.0M vs 66.9M parameters). TADA's frozen MLPs account for the modest overhead AgileDP carries
+        over plain PTQ.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= REAL-WORLD RESULTS ========================== -->
+<section id="realworld">
+  <div class="container">
+    <div class="tagline">Real-World Results</div>
+
+    <div class="card-surface">
+      <figure>
+        <div class="figure-frame">
+          <img src="static/images/real_setup.png"
+               alt="Real-world setups: FurnitureBench square-table and pick-and-place on Franka Panda, bimanual transport on Unitree G1.">
+        </div>
+        <figcaption>
+          <strong>Real-world experiments on the Franka Panda and the Unitree G1.</strong> Two tasks run on
+          a Franka Panda and one bimanual transport task runs on a Unitree G1 with an onboard Jetson Orin
+          Nano, all with the DDIM scheduler. Success rates use 1 training seed and 25 evaluations, and
+          quantized methods are evaluated at 4-bit precision.
+        </figcaption>
+      </figure>
+
+      <div class="table-scroll" style="margin-top:28px">
+        <table class="results">
+          <thead>
+            <tr>
+              <th class="method" rowspan="2">Method</th>
+              <th class="group" colspan="2">Franka Panda</th>
+              <th class="group">Unitree G1</th>
+            </tr>
+            <tr>
+              <th>Pick-and-place</th><th>Square-table</th><th>Transport</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="is-fp32">
+              <td class="method">Full Precision</td>
+              <td>0.84</td><td>0.80</td><td>0.56</td>
+            </tr>
+            <tr>
+              <td class="method">PTQ</td>
+              <td>0.00</td><td>0.00</td><td>0.00</td>
+            </tr>
+            <tr class="is-ours">
+              <td class="method">AgileDP</td>
+              <td>0.80</td><td>0.64</td><td>0.44</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p class="table-note" style="color:var(--text-secondary)">
+        AgileDP recovers 95.2% and 80% of full-precision performance on the two Franka Panda tasks and
+        78.6% on the Unitree G1 bimanual transport task, generalising to coordinated humanoid
+        manipulation. PTQ collapses to 0% on every real-world deployment.
+      </p>
+    </div>
+
+    <div class="result-label">Real-Robot Rollouts</div>
+    <div class="card-surface task-scope">
+      <div class="task-grid" style="grid-template-columns:repeat(auto-fit,minmax(180px,1fr))">
+        <div class="task-card active" data-task="real-pickplace">
+          <img src="static/images/task_pick_and_place.png" alt="Pick-and-place setup"
+               style="border-radius:8px;margin-bottom:8px">
+          <span>Pick-and-place</span><small>Franka Panda</small>
+        </div>
+        <div class="task-card" data-task="real-squaretable">
+          <img src="static/images/task_square_table.png" alt="FurnitureBench square-table setup"
+               style="border-radius:8px;margin-bottom:8px">
+          <span>Square-table</span><small>Franka Panda</small>
+        </div>
+        <div class="task-card" data-task="real-transport">
+          <img src="static/images/task_bimanual_transport.png" alt="Bimanual transport setup"
+               style="border-radius:8px;margin-bottom:8px">
+          <span>Bimanual Transport</span><small>Unitree G1</small>
+        </div>
+      </div>
+
+      <div class="task-panel active" id="real-pickplace">
+        <div class="video-duo">
+          <div class="video-cell">
+            <h5>PTQ &middot; W4A4</h5>
+            <video src="static/videos/compare_ptq.mp4" muted loop autoplay playsinline controls></video>
+          </div>
+          <div class="video-cell is-ours">
+            <h5>AgileDP &middot; W4A4</h5>
+            <video src="static/videos/real_pick_and_place.mp4" muted loop autoplay playsinline controls></video>
+          </div>
+        </div>
+      </div>
+
+      <div class="task-panel" id="real-squaretable">
+        <div class="video-duo">
+          <div class="video-cell">
+            <h5>PTQ &middot; W4A4</h5>
+            <video src="static/videos/compare_ptq.mp4" muted loop playsinline controls></video>
+          </div>
+          <div class="video-cell is-ours">
+            <h5>AgileDP &middot; W4A4</h5>
+            <video src="static/videos/real_square_table.mp4" muted loop playsinline controls></video>
+          </div>
+        </div>
+      </div>
+
+      <div class="task-panel" id="real-transport">
+        <div class="video-duo">
+          <div class="video-cell">
+            <h5>PTQ &middot; W4A4</h5>
+            <video src="static/videos/compare_ptq.mp4" muted loop playsinline controls></video>
+          </div>
+          <div class="video-cell is-ours">
+            <h5>AgileDP &middot; W4A4 (onboard Jetson Orin Nano)</h5>
+            <video src="static/videos/real_bimanual_transport.mp4" muted loop playsinline controls></video>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ LIMITATIONS ============================ -->
+<section id="limitations">
+  <div class="container">
+    <div class="tagline">Limitations</div>
+    <div class="card-surface">
+      <p style="margin-top:0">
+        TADA derives its target scaling factors from the median activation RMS during calibration. When
+        those targets vary sharply across timesteps, the closed-form regression can fit them
+        sub-optimally.
+      </p>
+      <p style="margin-bottom:0">
+        The reported speedups also understate what W4A4 can deliver. TensorRT's INT4 support covers
+        weight-only GEMM, while convolutions stay at INT8, and the Diffusion Policy U-Net mixes 1D
+        convolutions with linear layers. End-to-end INT4 kernel execution is therefore not yet feasible.
+        Specialised 4-bit kernels, as demonstrated for LLM inference, would let AgileDP realise its full
+        efficiency potential on edge devices.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ============================== BIBTEX =============================== -->
+<section id="bibtex">
+  <div class="container">
+    <div class="tagline">BibTeX</div>
+    <pre class="bibtex"><code>@inproceedings{joung2026agiledp,
+  title     = {AgileDP: Quantizing Diffusion Policy via Dynamic Scaling and Reweighted Distillation},
+  author    = {Joung, Jiyeon and Lee, Seungseop and Kim, Namyoon and Jang, Keunwoo},
+  booktitle = {Conference on Robot Learning (CoRL)},
+  year      = {2026}
+}</code></pre>
+  </div>
+</section>
+
+<!-- ============================== FOOTER =============================== -->
+<footer class="page-footer">
+  <p>
+    <a href="https://pier-lab.kr/" target="_blank" rel="noopener">Physical Intelligence &amp; Embodied
+    Robotics Lab (PIER Lab)</a>, Korea Institute of Science and Technology
+  </p>
+  <p>
+    Website template adapted from the
+    <a href="https://nerfies.github.io/" target="_blank" rel="noopener">Nerfies</a> academic project
+    page family. Content licensed under
+    <a href="http://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener">CC BY-SA 4.0</a>.
+  </p>
+</footer>
+
+<script src="static/js/index.js"></script>
+</body>
+</html>
