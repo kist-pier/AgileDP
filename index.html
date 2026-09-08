@@ -47,8 +47,10 @@
 <!-- =====================================================================
      TODO before announcing this page
      ---------------------------------------------------------------------
-     1. Links in the hero: replace the four href="#" placeholders below
-        (arXiv / paper PDF / code / video) and drop class "is-disabled".
+     1. Links in the hero: replace the three href="#" placeholders below
+        (arXiv / paper PDF / code) and drop class "is-disabled". The Video
+        button and the Overview Video section already point at the real
+        YouTube upload (Ne1Hq8tVIxE).
      2. static/videos/*.mp4 are generated placeholders. Overwrite each file
         in place, keeping the same filename, and the page needs no edits.
      3. Author homepages: wrap each name in <a href="..."> in the hero.
@@ -64,6 +66,7 @@
   </div>
   <div class="floating-nav-content">
     <ul class="floating-nav-menu">
+      <li><a href="#video"       class="floating-nav-link">Overview Video</a></li>
       <li><a href="#abstract"    class="floating-nav-link">Abstract</a></li>
       <li><a href="#motivation"  class="floating-nav-link">Motivation</a></li>
       <li><a href="#approach"    class="floating-nav-link">Approach</a></li>
@@ -115,13 +118,35 @@
         <a href="#" class="hero-link is-disabled"><i class="ai ai-arxiv"></i> arXiv</a>
         <a href="#" class="hero-link is-disabled"><i class="fas fa-file-pdf"></i> Paper</a>
         <a href="#" class="hero-link is-disabled"><i class="fab fa-github"></i> Code</a>
-        <a href="#" class="hero-link is-disabled"><i class="fab fa-youtube"></i> Video</a>
+        <a href="https://youtu.be/Ne1Hq8tVIxE" target="_blank" rel="noopener"
+           class="hero-link"><i class="fab fa-youtube"></i> Video</a>
       </div>
     </div>
 
     <div class="scroll-cue"><i class="fas fa-chevron-down"></i></div>
   </div>
 </div>
+
+<!-- ========================= OVERVIEW VIDEO ============================ -->
+<section id="video">
+  <div class="container">
+    <div class="tagline">Overview Video</div>
+    <div class="card-surface">
+      <div class="video-embed">
+        <iframe
+          src="https://www.youtube-nocookie.com/embed/Ne1Hq8tVIxE?autoplay=1&amp;mute=1&amp;rel=0&amp;modestbranding=1&amp;playsinline=1"
+          title="[CoRL 2026] Agile Diffusion Policy"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+          referrerpolicy="strict-origin-when-cross-origin"
+          allowfullscreen></iframe>
+      </div>
+      <p class="video-caption">
+        Starts muted. Use the player controls for sound, or
+        <a href="https://youtu.be/Ne1Hq8tVIxE" target="_blank" rel="noopener">watch on YouTube</a>.
+      </p>
+    </div>
+  </div>
+</section>
 
 <!-- ============================ ABSTRACT =============================== -->
 <section id="abstract">
