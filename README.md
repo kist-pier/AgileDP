@@ -3,11 +3,23 @@
 Project page for **AgileDP: Quantizing Diffusion Policy via Dynamic Scaling and
 Reweighted Distillation** (CoRL 2026).
 
-Live site: <https://pier-lab.kr/AgileDP/>
-
 Jiyeon Joung, Seungseop Lee, Namyoon Kim, Keunwoo Jang† —
 [PIER Lab](https://pier-lab.kr/), Korea Institute of Science and Technology (KIST).
 † corresponding author.
+
+## URLs
+
+The kist-pier org serves Pages through the custom domain, so this page has two
+addresses and both work:
+
+| Address | Use it for |
+| --- | --- |
+| <https://kist-pier.github.io/AgileDP/> | the citation in the paper |
+| <https://pier-lab.kr/AgileDP/> | slides, talks, social posts |
+
+Cite the `github.io` form. It redirects to the branded domain today and keeps
+working if the custom domain ever lapses; the reverse is not true. Whichever you
+pick, freeze it before the camera-ready.
 
 ## Layout
 
